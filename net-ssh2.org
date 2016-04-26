@@ -1,0 +1,239 @@
+#+Title: Net::SSH2
+
+#+Author: Salvador Fandiño
+#+Email: sfandino@yahoo.com
+
+#+OPTIONS: toc:nil
+#+OPTIONS: num:nil
+#+OPTIONS: :nil
+#+OPTIONS: ^:{}
+
+#+REVEAL_THEME: black
+
+
+* Net::SSH2 101
+
+#+begin_src cperl
+  my $ssh = Net::SSH2->new();
+  $ssh->connect($host) or die;;
+  $ssh->check_hostkey('strict') or die;   # nuevo en 0.59!
+  $ssh->auth(username => $user, interactive => 1) or die;
+
+  my $ch = $ssh->channel;
+  $ch->exec("echo 'hola mundo!'");
+  $ch->send_eof;
+  print while <$ch>;
+  print "exit status: " . $ch->exit_status . "\n";
+  $ch->close;
+
+  $ssh->scp_put("/tmp/foo", "/tmp/bar");
+
+  $ssh->disconnect;
+#+end_src
+
+** Net::SSH2 201
+
+   Nada es lo que parece...
+
+* Un poco de historia
+
+** 1999: [[ftp://ftp.cpan.org/pub/CPAN/authors/id/S/SA/SALVA/sperl-1.00][sperl]] (S. Fandiño)
+
+   - Un script que es capaz de ejecutar programas en Perl en maquinas
+     remotas utilizando SSH.
+
+   - Mi primera contribución a CPAN
+
+   - ¡Cuando en CPAN todavía se podían subir scripts!
+
+** 2000: Net::SSH (Ivan Kohler)
+
+   - Wrapper para el cliente binario de SSH.
+
+   - Simple y limitado.
+
+** 2001: Net::SSH::Perl + Net::SFTP (Benjamin Trott)
+
+   - Proyecto muy ambicioso que trata de implementar todo el stack de
+     SSH en Perl.
+
+   - Puede usar algunos módulos XS para mejorar el rendimiento.
+
+** 2005: Net::SFTP::Foreign (S. Fandiño)
+
+   - Fork the Net::SFTP que elimina la dependencia de Net::SSH::Perl
+     substituyendolo por el cliente binario "ssh".
+
+   - Instalar Net::SSH::Perl era un infierno (Math::PARI).
+
+** 2005: Net::SSH2 (David B. Robins)
+
+   - ¡Trata de substituir a Net::SSH::Perl que nadie es capaz de mantener!
+
+   - Basado en la biblioteca [[https://libssh2.org/][LibSSH2]].
+
+   - Muy dificil de usar.
+
+   - Tanto libssh2 como Net::SSH2 tienen muchos bugs.
+
+   - La documentación es pésima y esto no va a mejorar en mucho tiempo.
+
+** 2008: Net::OpenSSH (S. Fandiño)
+
+   - Wrapper del cliente binario de OpenSSH
+
+   - Usa la multiplexación de canales.
+
+   - Amigable y potente.
+
+   - No funciona en Windows.
+
+** 2009: Net::SFTP::Foreign::Backend::Net_SSH2 (S. Fandiño)
+
+   - Net::SFTP::Foreign utilizando Net::SSH2 como transporte.
+
+** 2011: Net::SSH::Any (S. Fandiño)
+
+   - Un subconjunto del API de Net::OpenSSH que puede funcionar sobre otros modulos y programas:
+
+     - Binarios plink (Putty), ssh3g (Tectia), sexec (Bitwise), ssh (OpenSSH + forks), Dropbear.
+
+     - Net::OpenSSH
+
+     - Net::SSH2
+
+     - Net::SSH::Perl (¡en el futuro!)
+
+
+** 2011: Net::SSH::Any::Backend::Net_SSH2
+
+   - 2012: primera version usable
+
+   - Pero tiene muchos bugs...
+
+   - ¡Eso me obliga a mirar dentro de Net::SSH2 y luego en libssh2!
+
+
+** 2016: Net::SSH::Perl 2.00 (Steffen Schwigon)
+
+   - Con soporte para algoritmos de cifrado y firma modernos.
+
+   - Uaaauuuuu!!!
+
+   - ¡Ahora tendre que tomarme en serio Net::SSH::Any::Backend::Net_SSH_Perl!
+
+* Salva & Net::SSH2
+
+
+
+** Contribuciónes a Net::SSH2
+
+   - Mayo de 2011: mi primera contribución, mejora en Makefile.PL
+
+   - Sigo enviando pull-requests y...
+
+   - Octubre 2013: me dan permisos de co-mantenedor pero me piden que
+     no publique nuevas versiones sin que alguien las revise.
+
+   - Agosto 2015: asumo que soy el único que realmente trabaja en el
+     módulo y empiezo a publicar nuevas versiones (0.54_01)
+
+   - A día de hoy llevo 3 versiones estables y 18 de desarrollo.
+
+** Algunas estadisticas de Net::SSH2
+
+   - Soy el tercer mantenedor (antes que yo David B. Robins y Rafael
+     Kitover).
+
+   - En GitHub aparecen 16 personas que han contribuido, 9 con 1
+     parche y 2 con 2 parches.
+
+   - Solo R. Kitover y yo tenemos más de 4 commits (no hay historia de
+     la epoca de David R. Robins).
+
+** Contribuciones a libssh2
+
+   - Pronto descubro que la mayor parte de los problemas de
+     Net::SSH2 en realidad se originan en libssh2.
+
+   - Octubre de 2013: mi primera contribucion, parche para arreglar el
+     control de flujo de SSH.
+
+   - Un par de parches gordos más y multitud de pequeños arreglos.
+
+** Problemas que me encuentro
+
+   - Interfaces incorrectos por falta de conocimiento del
+     protocolo SSH2 o de libssh2.
+
+   - Falta de consistencia: valores que se devuelven, gestión de
+     errores, timeouts, etc.
+
+   - API de bajo nivel (traslación directa de libssh2)...
+
+     - A veces alto nivel...
+
+     - de forma oportunista.
+
+   - Bugs.
+
+   - Falta funcionalidad basica
+
+** Más problemas
+
+   - Work-arounds para bugs y falta de funcionalidad en libssh2.
+
+   - Se han aplicado parches cortos de miras: se soluciona o
+     simplifica un problema muy especifico a costa de romper la
+     generalidad del modulo.
+
+   - Los usuarios utilizan multitud de work-arounds para evitar
+     problemas en el módulo.
+
+     - Que en realidad tampoco funcionan bien.
+
+     - Cargo-cult programming.
+
+** Cualidades de un módulo
+
+  1. Confiable.
+
+  2. Robusto.
+
+  3. Proposito general o amplio.
+
+  4. Usable.
+
+  5. Eficiente.
+
+     
+** ... y en un módulo heredado
+
+  1. Confiable.
+
+  2. Robusto.
+
+  3. Compatible hacia atras.
+
+  4. Proposito general o amplio.
+
+  5. Usable.
+
+  6. Eficiente.
+
+
+* Algunos ejemplos
+
+** Net::SSH2::Channel::read
+
+#+begin_src cperl
+
+  $ch->read($buffer, $size, $ext);
+
+#+end_src
+
+Un usuario se queja de que cuando llama a read, se leen menos bytes de
+los que solicita.
+
+Solución: se aplica un parche que hace que read llame a
+libssh2_channel_read repetidamente hasta que se llena el buffer.
