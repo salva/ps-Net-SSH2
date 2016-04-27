@@ -196,30 +196,26 @@
 
 ** Cualidades de un módulo
 
-  1. Confiable.
+  1. Confiable y robusto.
 
-  2. Robusto.
+  2. Proposito general o amplio.
 
-  3. Proposito general o amplio.
+  3. Fácil de usar.
 
-  4. Usable.
-
-  5. Eficiente.
+  4. Eficiente.
 
      
 ** ... y en un módulo heredado
 
-  1. Confiable.
+  1. Confiable y robusto.
 
-  2. Robusto.
+  2. Compatible hacia atras.
 
-  3. Compatible hacia atras.
+  3. Proposito general o amplio.
 
-  4. Proposito general o amplio.
+  4. Fácil de usar.
 
-  5. Usable.
-
-  6. Eficiente.
+  5. Eficiente.
 
 
 * Algunos ejemplos
@@ -232,8 +228,94 @@
 
 #+end_src
 
-Un usuario se queja de que cuando llama a read, se leen menos bytes de
-los que solicita.
+Un usuario se queja de que cuando llama a ~read~, se leen menos bytes de
+los que solicita. Se aplica un parche que hace que ~read~ llame a
+~libssh2_channel_read~ repetidamente hasta llenar el buffer.
 
-Solución: se aplica un parche que hace que read llame a
-libssh2_channel_read repetidamente hasta que se llena el buffer.
+** Net::SSH2::Channel::read
+
+¡MAL, en general no sabemos exactamente cuantos bytes queremos leer!
+
+** Net::SSH2::Channel::READLINE
+
+#+begin_src cperl
+
+  my $chan=$ssh2->channel();
+  $chan->shell();
+  print $chan "ifconfig\n";
+  print "LINE : $_" while <$chan>;
+  print $chan "top\n";
+  print "LINE : $_" while <$chan>;
+  $chan->close;
+
+#+end_src
+
+¡Un usuario dice que esto le funciona!
+
+** Net::SSH2::Channel::READLINE
+
+~READLINE~ tiene un timeout interno y no documentado de 250ms.
+
+De nuevo, una solucíon incorrecta y poco confiable que rompe la
+generalidad del módulo.
+
+** Manejo de errores
+
+- libssh2 mantiene internamente un código de error (similar a ~$!~).
+
+- Net::SSH2 mantiene internamente su propio código de error.
+
+- Cuando el usuario solicita el código de error se combinan ambos valores.
+
+- Es imposible combinar ambos valores correctamente en todos los casos.
+
+** Manejo de errores
+
+La solución pasa por extender el API de libssh2 para permitir
+cambiar el código de error desde el exterior:
+
+#+begin_src c
+
+int
+libssh2_session_set_last_error(LIBSSH2_SESSION *session,
+                               int errcode, const char *errmsg) 
+
+#+end_src
+
+¡Hay que solucionar los problemas de raiz!
+
+** Más manejo de errores
+
+  - libssh2 maneja el error ~LIBSSH2_ERROR_EAGAIN~ de manera especial:
+    sus funciones devuelven este error pero no lo guardan internamente.
+
+  - Los wrappers de XS devuelven ~undef~ en caso de error. Los
+    ~LIBSSH2_ERROR_EAGAIN~ se pierden.
+
+** Mucho código XS ad-hoc
+
+  - La conversion de valores entre Perl y C se hace explicitamente en los
+    wrappers de XS.
+
+  - Cada wrapper tiene ligeras variaciones.
+
+  - Cuando aparece un bug relacionado con la conversión de valores, se
+    corrige en el método donde se ha detectado pero no en otros
+    similares.
+
+** Menos codigo XS ad-hoc
+
+  - Clasificar los tipos a convertir.
+
+  - Utilizar typemaps de manera sistematica
+
+#+begin_src c
+
+T_SSH2_BYTES64
+    $arg = ( (($var) < 0)
+             ? &PL_sv_undef
+             : ((IVSIZE >= 8) ? newSVuv($var) : newSVnv($var)) );
+
+#+end_src
+
+
