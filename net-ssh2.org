@@ -124,8 +124,6 @@
 
 * Salva & Net::SSH2
 
-
-
 ** Contribuciónes a Net::SSH2
 
    - Mayo de 2011: mi primera contribución, mejora en Makefile.PL
@@ -200,11 +198,10 @@
 
   2. Proposito general o amplio.
 
-  3. Fácil de usar.
+  3. Fácil de usar (documentable).
 
   4. Eficiente.
 
-     
 ** ... y en un módulo heredado
 
   1. Confiable y robusto.
@@ -213,10 +210,9 @@
 
   3. Proposito general o amplio.
 
-  4. Fácil de usar.
+  4. Fácil de usar (documentable).
 
   5. Eficiente.
-
 
 * Algunos ejemplos
 
@@ -228,13 +224,15 @@
 
 #+end_src
 
-Un usuario se queja de que cuando llama a ~read~, se leen menos bytes de
-los que solicita. Se aplica un parche que hace que ~read~ llame a
+Un usuario se queja de que cuando llama a ~read~, se leen menos bytes
+de los que solicita. Se aplica un parche que hace que ~read~ llame a
 ~libssh2_channel_read~ repetidamente hasta llenar el buffer.
 
 ** Net::SSH2::Channel::read
 
-¡MAL, en general no sabemos exactamente cuantos bytes queremos leer!
+   ¡MAL!
+
+   En pocas ocasiones sabemos de antemano cuantos bytes queremos leer.
 
 ** Net::SSH2::Channel::READLINE
 
@@ -261,13 +259,16 @@ generalidad del módulo.
 
 ** Manejo de errores
 
-- libssh2 mantiene internamente un código de error (similar a ~$!~).
+   - libssh2 mantiene internamente un código de error (similar a
+     ~$!~).
 
-- Net::SSH2 mantiene internamente su propio código de error.
+   - Net::SSH2 mantiene internamente su propio código de error.
 
-- Cuando el usuario solicita el código de error se combinan ambos valores.
+   - Cuando el usuario solicita el código de error se combinan ambos
+     valores.
 
-- Es imposible combinar ambos valores correctamente en todos los casos.
+   - Es imposible combinar ambos valores correctamente en todos los
+     casos.
 
 ** Manejo de errores
 
@@ -286,28 +287,34 @@ libssh2_session_set_last_error(LIBSSH2_SESSION *session,
 
 ** Más manejo de errores
 
-  - libssh2 maneja el error ~LIBSSH2_ERROR_EAGAIN~ de manera especial:
-    sus funciones devuelven este error pero no lo guardan internamente.
+   - libssh2 maneja el error ~LIBSSH2_ERROR_EAGAIN~ de manera especial:
+     sus funciones devuelven este error pero no lo guardan internamente.
 
-  - Los wrappers de XS devuelven ~undef~ en caso de error. Los
-    ~LIBSSH2_ERROR_EAGAIN~ se pierden.
+   - Los wrappers de XS devuelven ~undef~ en caso de error. Los
+     ~LIBSSH2_ERROR_EAGAIN~ se pierden.
 
 ** Mucho código XS ad-hoc
 
-  - La conversion de valores entre Perl y C se hace explicitamente en los
-    wrappers de XS.
+   - La conversion de valores entre Perl y C se hace explicitamente en
+     los wrappers de XS.
 
-  - Cada wrapper tiene ligeras variaciones.
+   - Cada wrapper tiene ligeras variaciones.
 
-  - Cuando aparece un bug relacionado con la conversión de valores, se
-    corrige en el método donde se ha detectado pero no en otros
-    similares.
+   - Cuando aparece un bug relacionado con la conversión de valores,
+     se corrige en el método donde se ha detectado pero no en otros
+     similares.
 
 ** Menos codigo XS ad-hoc
 
-  - Clasificar los tipos a convertir.
+   - Clasificar los tipos a convertir.
 
-  - Utilizar typemaps de manera sistematica
+   - Utilizar typemaps de manera sistematica.
+
+** Otros problemas que se solucionan con typemaps
+
+   - Forzar un encoding (latin1)
+
+   - Gestionar correctamente enteros de 64bits en perls de 32bits.
 
 #+begin_src c
 
@@ -318,4 +325,121 @@ T_SSH2_BYTES64
 
 #+end_src
 
+** Faltas de funcionalidad
 
+¿Cual es el problema aquí?
+
+#+begin_src cperl
+
+  my $ssh = Net::SSH2->new();
+  $ssh->connect($host) or die;;
+  $ssh->check_hostkey('strict') or die;   # nuevo en 0.59!
+  $ssh->auth(username => $user, interactive => 1) or die;
+
+#+end_src
+
+** Chequeo de la clave del servidor
+
+   - Es un paso critico dentro del protocolo SSH.
+
+   - Evita ataques man-in-the-middle.
+
+   - Absolutamente nadie lo realiza con Net::SSH2
+
+** Problemas de interfaz
+
+#+begin_src cperl
+
+  $ssh->auth(username => $user, password => $pwd);
+
+  $ssh->auth(username => $user, publickey => $pubkey,
+             privateley => $privkey, password => $passphrase);
+
+#+end_src
+
+** Problemas de interfaz
+
+   - El mismo identificador es utilizado para clave y passphrase.
+
+   - La interfaz es ambigua.
+
+   - Solución:
+
+     - Añadir el identificador ~passphrase~
+
+     - Usar heuristicas para inferir cuando el usuario dice ~password~
+       para significar ~passphrase~ y generar un aviso.
+
+     - En un par de ciclos (1 año) eliminar las heuristicas.
+
+** Problemas del protocolo SSH
+
+   - Los canales de STDOUT y STDERR comparten el mensaje de EOF.
+
+   - No es posible indicar que uno ha finalizado y el otro no.
+
+#+begin_src cperl
+
+  while (defined (my $line = $ch->readline(0))) { # 0: stdout
+      print $line;
+  }
+  while (defined (my $line = $ch->readline(1))) { # 1: stderr
+      print STDERR $line;
+  }
+
+#+end_src
+
+** Leer en paralelo
+
+¡No hay solución mágica!
+
+#+begin_src cperl
+
+  while (my ($o, $e) = $ch->read2) {
+    # ¡no se leen lineas sino bloques!
+    print $o;
+    print STDERR $e;
+  }
+
+#+end_src
+
+* Conclusiones
+
+** Rescatar un módulo
+
+   - Enmendar errores y hacer mejoras Vs. compatibilidad hacia atras.
+
+   - Visión global de a donde se quiere ir:
+
+     - Requiere conocer la problematica a fondo.
+
+     - Decir que no a parches cortos de miras.
+
+   - Esto es FLOSS:
+
+     - Mejor solucionar los problemas en la fuente.
+
+     - Aunque sea más lento.
+
+   - Hay problemas que no tienen solución.
+
+   - Hace falta ¡paciencia!
+
+** Net::SSH2
+
+   - Todavía tiene muchos problemas y bugs (libssh2).
+
+   - Es fácil usarlo para hacer programas que funcionen bien el 95% de
+     las ocasiones.
+
+   - Es casi imposible usarlo para hacer programas que funcionen bien
+     el 100% de las ocasiones.
+
+     - Debido a singularidades y casos extremos que libssh2 no maneja
+       correctamente.
+
+     - Puede requerir estudiar el código de Net::SSH2 y de libssh2.
+
+   - Todo lo que necesita Net::SSH::Any funciona bien :-)
+
+* ¿Preguntas?
