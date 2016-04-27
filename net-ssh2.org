@@ -9,6 +9,7 @@
 #+OPTIONS: ^:{}
 
 #+REVEAL_THEME: black
+#+REVEAL_ROOT: http://cdn.jsdelivr.net/reveal.js/3.0.0/
 
 
 * Net::SSH2 101
@@ -16,7 +17,7 @@
 #+begin_src cperl
   my $ssh = Net::SSH2->new();
   $ssh->connect($host) or die;;
-  $ssh->check_hostkey('strict') or die;   # nuevo en 0.59!
+  $ssh->check_hostkey('strict') or die;   # ¡nuevo en 0.59!
   $ssh->auth(username => $user, interactive => 1) or die;
 
   my $ch = $ssh->channel;
@@ -35,68 +36,71 @@
 
    Nada es lo que parece...
 
+
 * Un poco de historia
 
 ** 1999: [[ftp://ftp.cpan.org/pub/CPAN/authors/id/S/SA/SALVA/sperl-1.00][sperl]] (S. Fandiño)
 
-   - Un script que es capaz de ejecutar programas en Perl en maquinas
-     remotas utilizando SSH.
+   - Un script que es capaz de ejecutar programas en Perl en máquinas
+     remotas utilizando [[https://en.wikipedia.org/wiki/Secure_Shell][SSH]].
 
    - Mi primera contribución a CPAN
 
-   - ¡Cuando en CPAN todavía se podían subir scripts!
+   - ¡Cuando en CPAN todavía se subían scripts!
 
-** 2000: Net::SSH (Ivan Kohler)
+** 2000: [[https://metacpan.org/pod/Net::SSH][Net::SSH]] (Ivan Kohler)
 
    - Wrapper para el cliente binario de SSH.
 
    - Simple y limitado.
 
-** 2001: Net::SSH::Perl + Net::SFTP (Benjamin Trott)
+** 2001: [[https://metacpan.org/pod/Net::SSH::Perl][Net::SSH::Perl]] + [[https://metacpan.org/pod/Net::SFTP][Net::SFTP]] (Benjamin Trott)
 
-   - Proyecto muy ambicioso que trata de implementar todo el stack de
-     SSH en Perl.
+   - Proyecto muy ambicioso que implementa toda la pila de
+     SSH en Perl desde cero.
 
    - Puede usar algunos módulos XS para mejorar el rendimiento.
 
-** 2005: Net::SFTP::Foreign (S. Fandiño)
+** 2005: [[https://metacpan.org/pod/Net::SFTP::Foreign][Net::SFTP::Foreign]] (S. Fandiño)
 
-   - Fork the Net::SFTP que elimina la dependencia de Net::SSH::Perl
-     substituyendolo por el cliente binario "ssh".
+   - Fork de Net::SFTP que elimina la dependencia de Net::SSH::Perl
+     substituyéndolo por el cliente nativo ~ssh~.
 
-   - Instalar Net::SSH::Perl era un infierno (Math::PARI).
+   - Instalar Net::SSH::Perl y sus dependencias es un infierno ([[https://metacpan.org/pod/Math::PARI][Math::PARI]]).
 
-** 2005: Net::SSH2 (David B. Robins)
+** 2005: [[https://metacpan.org/pod/Net::SSH2][Net::SSH2]] (David B. Robins)
 
    - ¡Trata de substituir a Net::SSH::Perl que nadie es capaz de mantener!
 
    - Basado en la biblioteca [[https://libssh2.org/][LibSSH2]].
 
-   - Muy dificil de usar.
+   - Muy difícil de usar.
 
    - Tanto libssh2 como Net::SSH2 tienen muchos bugs.
 
-   - La documentación es pésima y esto no va a mejorar en mucho tiempo.
+   - La documentación es pésima (y esto no va a mejorar en mucho
+     tiempo).
 
-** 2008: Net::OpenSSH (S. Fandiño)
+** 2008: [[https://metacpan.org/pod/Net::OpenSSH][Net::OpenSSH]] (S. Fandiño)
 
-   - Wrapper del cliente binario de OpenSSH
+   - Wrapper del cliente binario de [[http://www.openssh.com/][OpenSSH]].
 
    - Usa la multiplexación de canales.
 
    - Amigable y potente.
 
-   - No funciona en Windows.
+   - No funciona en Windows :-(
 
-** 2009: Net::SFTP::Foreign::Backend::Net_SSH2 (S. Fandiño)
+** 2009: [[https://metacpan.org/pod/Net::SFTP::Foreign::Backend::Net_SSH2][Net::SFTP::Foreign::Backend::Net_SSH2]] (S. Fandiño)
 
    - Net::SFTP::Foreign utilizando Net::SSH2 como transporte.
 
-** 2011: Net::SSH::Any (S. Fandiño)
+** 2011: [[https://metacpan.org/pod/Net::SSH::Any][Net::SSH::Any]] (S. Fandiño)
 
-   - Un subconjunto del API de Net::OpenSSH que puede funcionar sobre otros modulos y programas:
+   - Un subconjunto del API de Net::OpenSSH trabajando sobre casi
+     cualquier cosa que implemente el protocolo SSH:
 
-     - Binarios plink (Putty), ssh3g (Tectia), sexec (Bitwise), ssh (OpenSSH + forks), Dropbear.
+     - Binarios plink ([[http://www.chiark.greenend.org.uk/~sgtatham/putty/][Putty]]), ssh3g ([[http://www.ssh.com/products/tectia-ssh][Tectia]]), sexec ([[https://www.bitvise.com/index][Bitvise]]), ssh ([[http://www.openssh.com/][OpenSSH]] y forks), [[https://matt.ucc.asn.au/dropbear/dropbear.html][Dropbear]].
 
      - Net::OpenSSH
 
@@ -107,30 +111,32 @@
 
 ** 2011: Net::SSH::Any::Backend::Net_SSH2
 
-   - 2012: primera version usable
+   - 2012: primera versión usable
 
    - Pero tiene muchos bugs...
 
    - ¡Eso me obliga a mirar dentro de Net::SSH2 y luego en libssh2!
 
 
-** 2016: Net::SSH::Perl 2.00 (Steffen Schwigon)
+** 2016: Net::SSH::Perl (Steffen Schwigon)
+
+   - Última hora: ¡2.01 recién publicado!
 
    - Con soporte para algoritmos de cifrado y firma modernos.
 
-   - Uaaauuuuu!!!
+   - ¿Para cúando Net::SSH::Any::Backend::Net_SSH_Perl?
 
-   - ¡Ahora tendre que tomarme en serio Net::SSH::Any::Backend::Net_SSH_Perl!
 
 * Salva & Net::SSH2
 
-** Contribuciónes a Net::SSH2
+** Contribuciones a Net::SSH2
 
-   - Mayo de 2011: mi primera contribución, mejora en Makefile.PL
+   - Mayo de 2011: mi primera contribución: una mejora del
+     ~Makefile.PL~.
 
    - Sigo enviando pull-requests y...
 
-   - Octubre 2013: me dan permisos de co-mantenedor pero me piden que
+   - Octubre 2013: me dan permisos de co-mantenedor, pero me piden que
      no publique nuevas versiones sin que alguien las revise.
 
    - Agosto 2015: asumo que soy el único que realmente trabaja en el
@@ -138,26 +144,30 @@
 
    - A día de hoy llevo 3 versiones estables y 18 de desarrollo.
 
-** Algunas estadisticas de Net::SSH2
+** Contribuciones a libssh2
+
+   - ... porque muchos de los problemas de Net::SSH2 vienen de libssh2
+
+   - Octubre de 2013: mi primera contribución, parche para arreglar el
+     control de flujo de SSH.
+
+   - Un par de parches gordos más y multitud de pequeños arreglos.
+
+** Algunas estadísticas de Net::SSH2
 
    - Soy el tercer mantenedor (antes que yo David B. Robins y Rafael
      Kitover).
 
-   - En GitHub aparecen 16 personas que han contribuido, 9 con 1
-     parche y 2 con 2 parches.
+   - Durante algunos años estuvo abandonado.
 
-   - Solo R. Kitover y yo tenemos más de 4 commits (no hay historia de
-     la epoca de David R. Robins).
+   - En GitHub aparecen 16 personas que han contribuido, de las cuales...
 
-** Contribuciones a libssh2
+     - 9 lo han hecho con 1 parche.
 
-   - Pronto descubro que la mayor parte de los problemas de
-     Net::SSH2 en realidad se originan en libssh2.
+     - 2 con dos parches.
 
-   - Octubre de 2013: mi primera contribucion, parche para arreglar el
-     control de flujo de SSH.
-
-   - Un par de parches gordos más y multitud de pequeños arreglos.
+     - Solo R. Kitover y yo tenemos más de 4 commits (no hay registros
+       de la época de David R. Robins - la pregitstoría).
 
 ** Problemas que me encuentro
 
@@ -169,50 +179,54 @@
 
    - API de bajo nivel (traslación directa de libssh2)...
 
-     - A veces alto nivel...
+   - ... y de alto nivel de manera oportunista
 
-     - de forma oportunista.
+   - Muchos bugs (~40 tickets abiertos entre [[https://rt.cpan.org/Dist/Display.html?Status=Active&Queue=Net-SSH2][RT]] y [[https://github.com/rkitover/net-ssh2/issues][GitHub]]).
 
-   - Bugs.
-
-   - Falta funcionalidad basica
+   - Falta funcionalidad básica.
 
 ** Más problemas
 
-   - Work-arounds para bugs y falta de funcionalidad en libssh2.
+   - Work-arounds para los bugs carencias funcionales de libssh2.
 
    - Se han aplicado parches cortos de miras: se soluciona o
      simplifica un problema muy especifico a costa de romper la
-     generalidad del modulo.
+     generalidad del módulo.
 
    - Los usuarios utilizan multitud de work-arounds para evitar
-     problemas en el módulo.
+     problemas en el módulo:
 
      - Que en realidad tampoco funcionan bien.
 
-     - Cargo-cult programming.
+     - Programación cargo-cult.
 
-** Cualidades de un módulo
+
+* Mis ideales
+
+O como tomar decisiones...
+
+** Cualidades de un buen módulo
 
   1. Confiable y robusto.
 
-  2. Proposito general o amplio.
+  2. Propósito general o amplio.
 
   3. Fácil de usar (documentable).
 
   4. Eficiente.
 
-** ... y en un módulo heredado
+** ... y en un módulo adoptado
 
   1. Confiable y robusto.
 
-  2. Compatible hacia atras.
+  2. *Compatible hacia atrás*.
 
-  3. Proposito general o amplio.
+  3. Propósito general o amplio.
 
   4. Fácil de usar (documentable).
 
   5. Eficiente.
+
 
 * Algunos ejemplos
 
@@ -225,8 +239,10 @@
 #+end_src
 
 Un usuario se queja de que cuando llama a ~read~, se leen menos bytes
-de los que solicita. Se aplica un parche que hace que ~read~ llame a
-~libssh2_channel_read~ repetidamente hasta llenar el buffer.
+de los que solicita.
+
+Se aplica un parche que hace que ~read~ llame a ~libssh2_channel_read~
+repetidamente hasta llenar el buffer.
 
 ** Net::SSH2::Channel::read
 
@@ -254,20 +270,19 @@ de los que solicita. Se aplica un parche que hace que ~read~ llame a
 
 ~READLINE~ tiene un timeout interno y no documentado de 250ms.
 
-De nuevo, una solucíon incorrecta y poco confiable que rompe la
+De nuevo, una solución incorrecta y poco confiable que rompe la
 generalidad del módulo.
 
 ** Manejo de errores
 
-   - libssh2 mantiene internamente un código de error (similar a
-     ~$!~).
+   - libssh2 mantiene un código de error (similar a ~$!~).
 
-   - Net::SSH2 mantiene internamente su propio código de error.
+   - Net::SSH2 mantiene su propio código de error.
 
    - Cuando el usuario solicita el código de error se combinan ambos
      valores.
 
-   - Es imposible combinar ambos valores correctamente en todos los
+   - Pero es imposible combinar ambos valores correctamente en todos los
      casos.
 
 ** Manejo de errores
@@ -283,9 +298,9 @@ libssh2_session_set_last_error(LIBSSH2_SESSION *session,
 
 #+end_src
 
-¡Hay que solucionar los problemas de raiz!
+¡Hay que solucionar los problemas de raíz!
 
-** Más manejo de errores
+** EAGAIN
 
    - libssh2 maneja el error ~LIBSSH2_ERROR_EAGAIN~ de manera especial:
      sus funciones devuelven este error pero no lo guardan internamente.
@@ -293,9 +308,17 @@ libssh2_session_set_last_error(LIBSSH2_SESSION *session,
    - Los wrappers de XS devuelven ~undef~ en caso de error. Los
      ~LIBSSH2_ERROR_EAGAIN~ se pierden.
 
+   - Obviamente esto no esta documentado en ningún sitio.
+
+** Perlish EAGAIN
+
+   Hacemos que EAGAIN si se guarde.
+
+   Ahora tenemos ~libssh2_session_set_last_error~.
+
 ** Mucho código XS ad-hoc
 
-   - La conversion de valores entre Perl y C se hace explicitamente en
+   - La conversión de valores entre Perl y C se hace explícitamente en
      los wrappers de XS.
 
    - Cada wrapper tiene ligeras variaciones.
@@ -304,15 +327,15 @@ libssh2_session_set_last_error(LIBSSH2_SESSION *session,
      se corrige en el método donde se ha detectado pero no en otros
      similares.
 
-** Menos codigo XS ad-hoc
+** Menos código XS ad-hoc
 
    - Clasificar los tipos a convertir.
 
-   - Utilizar typemaps de manera sistematica.
+   - Utilizar typemaps de manera sistemática.
 
 ** Otros problemas que se solucionan con typemaps
 
-   - Forzar un encoding (latin1)
+   - Forzar la codificación de los datos (latin1).
 
    - Gestionar correctamente enteros de 64bits en perls de 32bits.
 
@@ -333,7 +356,7 @@ T_SSH2_BYTES64
 
   my $ssh = Net::SSH2->new();
   $ssh->connect($host) or die;;
-  $ssh->check_hostkey('strict') or die;   # nuevo en 0.59!
+  $ssh->check_hostkey('strict') or die;   # ¡nuevo en 0.59!
   $ssh->auth(username => $user, interactive => 1) or die;
 
 #+end_src
@@ -359,18 +382,18 @@ T_SSH2_BYTES64
 
 ** Problemas de interfaz
 
-   - El mismo identificador es utilizado para clave y passphrase.
+   - La interfaz es ambigua:
 
-   - La interfaz es ambigua.
+     - El mismo identificador es utilizado para clave y passphrase.
 
    - Solución:
 
-     - Añadir el identificador ~passphrase~
+     - Añadir el identificador ~passphrase~.
 
-     - Usar heuristicas para inferir cuando el usuario dice ~password~
+     - Usar heurísticas para inferir cuando el usuario dice ~password~
        para significar ~passphrase~ y generar un aviso.
 
-     - En un par de ciclos (1 año) eliminar las heuristicas.
+     - En un par de ciclos (1 año) eliminar las heurísticas.
 
 ** Problemas del protocolo SSH
 
@@ -403,15 +426,16 @@ T_SSH2_BYTES64
 
 #+end_src
 
+
 * Conclusiones
 
-** Rescatar un módulo
+** Adoptar un módulo
 
-   - Enmendar errores y hacer mejoras Vs. compatibilidad hacia atras.
+   - Enmendar errores y hacer mejoras Vs. compatibilidad hacia atrás.
 
    - Visión global de a donde se quiere ir:
 
-     - Requiere conocer la problematica a fondo.
+     - Requiere conocer la problemática a fondo.
 
      - Decir que no a parches cortos de miras.
 
@@ -432,14 +456,14 @@ T_SSH2_BYTES64
    - Es fácil usarlo para hacer programas que funcionen bien el 95% de
      las ocasiones.
 
-   - Es casi imposible usarlo para hacer programas que funcionen bien
-     el 100% de las ocasiones.
+   - Es casi imposible usarlo para hacer programas que funcionen siempre:
 
      - Debido a singularidades y casos extremos que libssh2 no maneja
        correctamente.
 
      - Puede requerir estudiar el código de Net::SSH2 y de libssh2.
 
-   - Todo lo que necesita Net::SSH::Any funciona bien :-)
+   - Todo lo que necesita *Net::SSH::Any* funciona bien :-)
+
 
 * ¿Preguntas?
